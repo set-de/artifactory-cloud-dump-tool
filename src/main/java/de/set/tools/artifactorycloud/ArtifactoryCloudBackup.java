@@ -1,11 +1,7 @@
 package de.set.tools.artifactorycloud;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.RecursiveAction;
 
 import org.jfrog.artifactory.client.Artifactory;
 import org.jfrog.artifactory.client.ArtifactoryClientBuilder;
@@ -14,59 +10,42 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ApplicationContext;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 import com.google.common.base.Strings;
 
-import de.set.tools.artifactorycloud.tasks.BackupConfiguration;
-import de.set.tools.artifactorycloud.tasks.BackupRepositories;
+import de.set.tools.artifactorycloud.tasks.BackupArtifactory;
 
 @SpringBootApplication
+@EnableConfigurationProperties(ArtifactoryConfig.class)
 public class ArtifactoryCloudBackup {
 
-    @Value("${artifactory.url}")
-    private String artifactoryUrl;
-
-    @Value("${artifactory.user}")
-    private String artifactoryUser;
-
-    @Value("${artifactory.password}")
-    private String artifactoryPassword;
-
     @Value("${output.dir}")
-    private final File outputDir = new File("backup"); //$NON-NLS-1$
+    private File outputDir;
 
     public static void main(final String[] args) {
         SpringApplication.run(ArtifactoryCloudBackup.class, args);
     }
 
     @Bean
-    public CommandLineRunner commandLineRunner(final ApplicationContext ctx) {
+    public CommandLineRunner commandLineRunner(final Artifactory artifactory) {
         return args -> {
-            final Artifactory artifactory = ctx.getBean(Artifactory.class);
-
-            final ForkJoinPool pool = ForkJoinPool.commonPool();
-            pool.invoke(new RecursiveAction() {
-
-                private static final long serialVersionUID = 1328540978178667582L;
-
-                @Override
-                protected void compute() {
-                    try {
-                        final Path backupPath = ArtifactoryCloudBackup.this.outputDir.toPath();
-                        Files.createDirectories(backupPath);
-
-                        invokeAll(
-                                new BackupConfiguration(artifactory, backupPath),
-                                new BackupRepositories(artifactory, backupPath));
-                    } catch (final IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
-
+            ForkJoinPool.commonPool().invoke(
+                    new BackupArtifactory(this.outputDir.toPath(), artifactory));
         };
+    }
+
+    @Bean
+    Artifactory artifactory(final ProxyConfig proxy, final ArtifactoryConfig config) {
+        final Artifactory artifactory = ArtifactoryClientBuilder.create()
+                .setUrl(config.getUrl())
+                .setUsername(config.getUser())
+                .setPassword(config.getPassword())
+                .setProxy(proxy)
+                .build();
+
+        return artifactory;
     }
 
     @SuppressWarnings("nls")
@@ -81,15 +60,4 @@ public class ArtifactoryCloudBackup {
         }
     }
 
-    @Bean
-    Artifactory artifactory(final ProxyConfig proxy) {
-        final Artifactory artifactory = ArtifactoryClientBuilder.create()
-                .setUrl(this.artifactoryUrl)
-                .setUsername(this.artifactoryUser)
-                .setPassword(this.artifactoryPassword)
-                .setProxy(proxy)
-                .build();
-
-        return artifactory;
-    }
 }
