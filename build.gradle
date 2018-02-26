@@ -1,0 +1,34 @@
+plugins {
+    id 'org.springframework.boot' version '1.5.10.RELEASE'
+    id 'java'
+    id 'maven-publish'
+    id 'application'
+}
+
+apply plugin: 'java'
+
+repositories {
+    jcenter()
+}
+
+group = 'de.set.tools'
+version = '1.0.0'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+    compile 'com.google.guava:guava:22.0'
+    compile 'org.jfrog.artifactory.client:artifactory-java-client-services:2.6.0'
+    compile 'org.springframework.boot:spring-boot-starter'
+
+    testCompile 'junit:junit'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}
