@@ -3,6 +3,7 @@ package de.set.tools.artifactorycloud.tasks;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.RecursiveAction;
 import java.util.stream.Collectors;
 
 import org.jfrog.artifactory.client.Artifactory;
@@ -11,7 +12,7 @@ import org.jfrog.artifactory.client.model.impl.RepositoryTypeImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BackupRepositories extends BackupAction {
+public class BackupRepositories extends RecursiveAction {
 
     private static final long serialVersionUID = 4028274842311700214L;
     private static final Logger LOG = LoggerFactory.getLogger(BackupRepositories.class);

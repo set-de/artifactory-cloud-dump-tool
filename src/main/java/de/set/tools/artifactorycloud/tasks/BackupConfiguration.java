@@ -5,12 +5,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.concurrent.RecursiveAction;
 
 import org.jfrog.artifactory.client.Artifactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BackupConfiguration extends BackupAction {
+public class BackupConfiguration extends RecursiveAction {
 
 
     private static final long serialVersionUID = -2261110588795990077L;
