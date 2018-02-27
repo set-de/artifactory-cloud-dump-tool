@@ -50,7 +50,7 @@ public final class BackupArtifactory extends RecursiveAction {
         properties.put("os", System.getProperty("os.name"));
         properties.put("backup.path", this.outputDir.toString());
 
-        try (OutputStream os = Files.newOutputStream(backupInfos, StandardOpenOption.APPEND)) {
+        try (OutputStream os = Files.newOutputStream(backupInfos, StandardOpenOption.TRUNCATE_EXISTING)) {
             properties.storeToXML(os, "");
         }
     }
@@ -58,14 +58,14 @@ public final class BackupArtifactory extends RecursiveAction {
     @SuppressWarnings("nls")
     private void appendFinishedBackupInformations(final Path backupInfos, final boolean successful) throws IOException {
         final Properties properties = new Properties();
-        try (InputStream in = Files.newInputStream(backupInfos, StandardOpenOption.APPEND)) {
+        try (InputStream in = Files.newInputStream(backupInfos, StandardOpenOption.READ)) {
             properties.loadFromXML(in);
         }
 
         properties.put("result", successful ? "success" : "failure");
         properties.put("backup.finished", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
 
-        try (OutputStream os = Files.newOutputStream(backupInfos, StandardOpenOption.APPEND)) {
+        try (OutputStream os = Files.newOutputStream(backupInfos, StandardOpenOption.TRUNCATE_EXISTING)) {
             properties.storeToXML(os, "");
         }
     }
