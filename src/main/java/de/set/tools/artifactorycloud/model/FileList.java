@@ -3,27 +3,20 @@ package de.set.tools.artifactorycloud.model;
 import java.util.Date;
 import java.util.List;
 
-import org.jfrog.artifactory.client.model.Item;
-import org.jfrog.artifactory.client.model.impl.ItemImpl;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FileList {
 
-    @JsonIgnore
-    private List<Item> files;
+    private List<FileListEntry> files;
     private String uri;
     private Date created;
 
-    public List<Item> getFiles() {
+    public List<FileListEntry> getFiles() {
         return this.files;
     }
 
-    @JsonDeserialize(contentAs = ItemImpl.class)
-    public void setFiles(final List<Item> files) {
+    public void setFiles(final List<FileListEntry> files) {
         this.files = files;
     }
 

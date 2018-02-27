@@ -8,23 +8,24 @@ import java.util.concurrent.RecursiveAction;
 
 import org.jfrog.artifactory.client.Artifactory;
 import org.jfrog.artifactory.client.RepositoryHandle;
-import org.jfrog.artifactory.client.model.Item;
 import org.jfrog.artifactory.client.model.LightweightRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import de.set.tools.artifactorycloud.model.FileListEntry;
 
 @SuppressWarnings("serial")
 public class BackupFile extends RecursiveAction {
 
     private static final Logger LOG = LoggerFactory.getLogger(BackupFile.class);
 
-    private final Item file;
+    private final FileListEntry file;
     private final Artifactory artifactory;
     private final Path repoDir;
     private final LightweightRepository repository;
 
     public BackupFile(
-            final Item file,
+            final FileListEntry file,
             final LightweightRepository repository,
             final Artifactory artifactory,
             final Path repoDir) {
@@ -48,7 +49,7 @@ public class BackupFile extends RecursiveAction {
 
         } catch (final IOException e) {
             throw new RuntimeException(String.format("Cannot download file %s of repository",
-                    this.file.getPath(),
+                    this.file.getUri(),
                     this.repository.getKey()), e);
         }
 

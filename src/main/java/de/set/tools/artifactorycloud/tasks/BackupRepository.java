@@ -1,7 +1,10 @@
 package de.set.tools.artifactorycloud.tasks;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.concurrent.RecursiveAction;
 import java.util.stream.Collectors;
 
@@ -49,18 +52,26 @@ public class BackupRepository extends RecursiveAction {
                 .addQueryParam("deep", "1");
             final ArtifactoryResponse response = this.artifactory.restCall(request);
             if (response.isSuccessResponse()) {
+                this.saveData(response.getRawBody());
                 final FileList fileList = response.parseBody(FileList.class);
-                invokeAll(fileList.getFiles().stream().map((file) -> new BackupFile(
-                        file,
-                        this.repo,
-                        this.artifactory,
-                        repoDir))
+                invokeAll(fileList.getFiles().stream()
+                        .filter((entry) -> !entry.isFolder())
+                        .map((file) -> new BackupFile(
+                                file,
+                                this.repo,
+                                this.artifactory,
+                                repoDir))
                 .collect(Collectors.toList()));
             }
             LOG.info("Finished backup of repository {}", this.repo.getKey());
         } catch (final Exception e) {
             throw new RuntimeException(String.format("Cannot backup repository %s", this.repo.getKey()), e);
         }
+    }
+
+    private void saveData(final String rawBody) throws IOException {
+        final Path path = this.backupDir.resolve(String.format("%s-file-list.json", this.repo.getKey())); //$NON-NLS-1$
+        Files.write(path, rawBody.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW);
     }
 
 }
