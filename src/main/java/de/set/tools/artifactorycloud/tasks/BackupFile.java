@@ -94,14 +94,12 @@ public class BackupFile extends RecursiveAction {
     private void verify(final Path target) throws IOException {
         final long fileSize = Files.size(target);
         if (fileSize != this.file.getSize()) {
-            throw new IOException(
-                String.format("Size mismatch: expected %d but was %d %s", this.file.getSize(), fileSize, target));
+            LOG.warn("Size mismatch: expected {} but was {} {}", this.file.getSize(), fileSize, target);
         }
 
         final HashCode sha1 = this.sha1(target);
         if (!HashCode.fromString(this.file.getSha1()).equals(sha1)) {
-             throw new IOException(
-                String.format("Sha-1 mismatch: expected %s but was %s %s", this.file.getSha1(), sha1, target));
+            LOG.warn("Sha-1 mismatch: expected {} but was {} {}", this.file.getSha1(), sha1, target);
         }
 
     }
