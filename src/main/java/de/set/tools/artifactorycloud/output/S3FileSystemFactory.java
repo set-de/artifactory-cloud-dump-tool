@@ -45,7 +45,10 @@ public class S3FileSystemFactory implements FileSystemFactory {
 
         final String region = this.s3config.getRegion();
         final String uri = this.getUri(region);
-        this.fileSystem = FileSystems.newFileSystem(URI.create(uri), env);
+        this.fileSystem = FileSystems.newFileSystem(
+                URI.create(uri),
+                env,
+                Thread.currentThread().getContextClassLoader());
         return this.fileSystem;
     }
 
