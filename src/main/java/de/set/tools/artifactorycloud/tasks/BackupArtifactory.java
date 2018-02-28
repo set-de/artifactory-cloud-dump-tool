@@ -59,7 +59,7 @@ public final class BackupArtifactory extends RecursiveAction {
     @SuppressWarnings("nls")
     private void appendFinishedBackupInformations(final Path backupInfos, final boolean successful) throws IOException {
         final Properties properties = new Properties();
-        try (InputStream in = Files.newInputStream(backupInfos, StandardOpenOption.READ)) {
+        try (InputStream in = Files.newInputStream(backupInfos)) {
             properties.loadFromXML(in);
         }
 
