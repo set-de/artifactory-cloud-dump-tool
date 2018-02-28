@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.RecursiveAction;
 
@@ -13,7 +14,11 @@ import org.jfrog.artifactory.client.model.LightweightRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Strings;
+import com.google.common.hash.Funnels;
 import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 
 import de.set.tools.artifactorycloud.model.FileListEntry;
@@ -42,22 +47,47 @@ public class BackupFile extends RecursiveAction {
     @SuppressWarnings("nls")
     @Override
     protected void compute() {
-        LOG.info("Downloading {} in repository {}", this.file.getUri(), this.repository.getKey());
+        LOG.info("Downloading {} from repository {} [size: {}; sha-1: {}]",
+                this.file.getUri(),
+                this.repository.getKey(),
+                this.file.getSize(),
+                this.file.getSha1());
+
+        final Path target = this.getPath(this.file.getUri());
+
+        if (!this.isUpToDate(target)) {
+            this.downloadFile(target);
+        } else {
+            LOG.info("{} is up to date", target);
+        }
+    }
+
+    protected void downloadFile(final Path target) {
         final RepositoryHandle handle = this.artifactory.repository(this.repository.getKey());
         try (InputStream input = handle.download(this.file.getUri()).doDownload()) {
 
-            final Path target = this.repoDir.resolve("." + this.file.getUri());
+
             Files.createDirectories(target.getParent());
-            Files.copy(input, target);
+            Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
             Files.setLastModifiedTime(target, FileTime.from(this.file.getLastModified().toInstant()));
             this.verify(target);
 
         } catch (final IOException e) {
-            throw new RuntimeException(String.format("Cannot download file %s of repository",
+            throw new RuntimeException(String.format("Cannot download file %s of repository", //$NON-NLS-1$
                     this.file.getUri(),
                     this.repository.getKey()), e);
         }
+    }
 
+    private boolean isUpToDate(final Path target) {
+        try {
+            return Files.exists(target)
+                && this.file.getSize() == Files.size(target)
+                && HashCode.fromString(this.file.getSha1()).equals(this.sha1(target));
+        } catch (final IOException e) {
+            LOG.warn("Unable to verify file", e); //$NON-NLS-1$
+            return false;
+        }
     }
 
     @SuppressWarnings("nls")
@@ -78,7 +108,18 @@ public class BackupFile extends RecursiveAction {
 
     @SuppressWarnings("deprecation")
     private HashCode sha1(final Path file) throws IOException {
-        return com.google.common.io.Files.asByteSource(file.toFile()).hash(Hashing.sha1());
+        final HashFunction hashFunction = Hashing.sha1();
+        final Hasher hasher = hashFunction.newHasher();
+        Files.copy(file, Funnels.asOutputStream(hasher));
+        return hasher.hash();
+    }
+
+    private Path getPath(final String uri) {
+        if (!Strings.isNullOrEmpty(uri) && uri.startsWith("/")) { //$NON-NLS-1$
+            return this.getPath(uri.substring(1));
+        } else {
+            return this.repoDir.resolve(uri);
+        }
     }
 
 }

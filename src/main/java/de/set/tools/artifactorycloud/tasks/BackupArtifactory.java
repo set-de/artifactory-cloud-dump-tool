@@ -29,7 +29,9 @@ public final class BackupArtifactory extends RecursiveAction {
     protected void compute() {
         try {
             final Path backupInfos = this.outputDir.resolve("backup.properties");
-            Files.createDirectories(this.outputDir);
+            if (!Files.exists(this.outputDir)) {
+                Files.createDirectories(this.outputDir);
+            }
             this.createInitialInfos(backupInfos);
 
             invokeAll(
@@ -43,14 +45,13 @@ public final class BackupArtifactory extends RecursiveAction {
 
     @SuppressWarnings("nls")
     private void createInitialInfos(final Path backupInfos) throws IOException {
-        Files.createFile(backupInfos);
         final Properties properties = new Properties();
         properties.put("backup.started", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         properties.put("user", System.getProperty("user.name"));
         properties.put("os", System.getProperty("os.name"));
         properties.put("backup.path", this.outputDir.toString());
 
-        try (OutputStream os = Files.newOutputStream(backupInfos, StandardOpenOption.TRUNCATE_EXISTING)) {
+        try (OutputStream os = Files.newOutputStream(backupInfos, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE)) {
             properties.storeToXML(os, "");
         }
     }

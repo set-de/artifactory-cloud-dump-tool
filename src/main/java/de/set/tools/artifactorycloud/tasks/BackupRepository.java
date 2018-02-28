@@ -71,7 +71,9 @@ public class BackupRepository extends RecursiveAction {
 
     private void saveData(final String rawBody) throws IOException {
         final Path path = this.backupDir.resolve(String.format("%s-file-list.json", this.repo.getKey())); //$NON-NLS-1$
-        Files.write(path, rawBody.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW);
+        Files.write(path, rawBody.getBytes(StandardCharsets.UTF_8),
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING);
     }
 
 }

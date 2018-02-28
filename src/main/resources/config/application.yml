@@ -1,2 +1,4 @@
-output:
-  dir: backup
+destination.type: local
+
+local:
+  path: backup

@@ -36,7 +36,8 @@ public class BackupConfiguration extends RecursiveAction {
         try {
             Files.write(configFile,
                     configuration.getBytes(StandardCharsets.UTF_8),
-                    StandardOpenOption.CREATE_NEW);
+                    StandardOpenOption.TRUNCATE_EXISTING,
+                    StandardOpenOption.CREATE);
             LOG.info("configuration was written to {}", configFile);
         } catch (final IOException e) {
             throw new RuntimeException(e);

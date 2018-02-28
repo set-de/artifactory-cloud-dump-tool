@@ -1,12 +1,12 @@
 package de.set.tools.artifactorycloud;
 
-import java.io.File;
+import java.nio.file.FileSystem;
+import java.nio.file.Path;
 import java.util.concurrent.ForkJoinPool;
 
 import org.jfrog.artifactory.client.Artifactory;
 import org.jfrog.artifactory.client.ArtifactoryClientBuilder;
 import org.jfrog.artifactory.client.ProxyConfig;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,24 +15,26 @@ import org.springframework.context.annotation.Bean;
 
 import com.google.common.base.Strings;
 
+import de.set.tools.artifactorycloud.output.FileSystemFactory;
 import de.set.tools.artifactorycloud.tasks.BackupArtifactory;
 
 @SpringBootApplication
-@EnableConfigurationProperties(ArtifactoryConfig.class)
+@EnableConfigurationProperties({ ArtifactoryConfig.class })
 public class ArtifactoryCloudBackup {
-
-    @Value("${output.dir}")
-    private File outputDir;
 
     public static void main(final String[] args) {
         SpringApplication.run(ArtifactoryCloudBackup.class, args);
     }
 
     @Bean
-    public CommandLineRunner commandLineRunner(final Artifactory artifactory) {
+    public CommandLineRunner commandLineRunner(final Artifactory artifactory, final FileSystemFactory fileSystemFactory) {
         return args -> {
-            ForkJoinPool.commonPool().invoke(
-                    new BackupArtifactory(this.outputDir.toPath(), artifactory));
+            try (FileSystem fs = fileSystemFactory.openFileSystem()) {
+                final Path outputPath = fileSystemFactory.getEntryPath();
+
+                ForkJoinPool.commonPool().invoke(
+                    new BackupArtifactory(outputPath, artifactory));
+            }
         };
     }
 
@@ -59,5 +61,4 @@ public class ArtifactoryCloudBackup {
             return null;
         }
     }
-
 }
