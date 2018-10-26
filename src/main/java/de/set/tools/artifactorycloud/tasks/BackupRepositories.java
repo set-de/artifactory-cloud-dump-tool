@@ -1,6 +1,7 @@
 package de.set.tools.artifactorycloud.tasks;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
@@ -29,7 +30,13 @@ public class BackupRepositories extends RecursiveAction {
     protected void compute() {
         final Path repoDir = this.backupDir.resolve("repositories"); //$NON-NLS-1$
         LOG.info("Start backups of repositories into {}", repoDir); //$NON-NLS-1$
-        final List<LightweightRepository> repositories = this.artifactory.repositories().list(null);
+        final List<LightweightRepository> repositories = new ArrayList<>();
+        // As long as https://github.com/jfrog/artifactory-client-java/issues/227
+        // remains unresolved we need to explicitely select LOCALs and REMOTEs.
+        // Otherwise we will run into a non-functional backup job as soon as we
+        // add a distribution repository.
+        repositories.addAll(this.artifactory.repositories().list(RepositoryTypeImpl.LOCAL));
+        repositories.addAll(this.artifactory.repositories().list(RepositoryTypeImpl.REMOTE));
         ForkJoinTask.invokeAll(repositories
             .stream()
             .filter((repo) -> repo.getType() != RepositoryTypeImpl.VIRTUAL)
